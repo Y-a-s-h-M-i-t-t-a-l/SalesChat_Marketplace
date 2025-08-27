@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Marketplace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; }
+        .nav-link { transition: all 0.2s ease-in-out; font-weight: 400; }
+        .nav-link:hover { background-color: #374151; color: #ffffff; }
+        .nav-link.active { background-color: #4b5563; color: #ffffff; font-weight: 600; }
+        .nav-link.active svg { stroke: #ffffff; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        #productGrid, #initialStateContainer { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .chat-bubble-agent { background-color: #e5e7eb; align-self: flex-start; }
+        .chat-bubble-user { background-color: #374151; color: #f9fafb; align-self: flex-end; }
+        .loader { display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .loader span { width: 8px; height: 8px; border-radius: 50%; background-color: #9ca3af; animation: bounce 1.4s infinite ease-in-out both; }
+        .loader span:nth-child(1) { animation-delay: -0.32s; }
+        .loader span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        
+        #leftSidebar, #sidebarCollapseButton svg {
+            transition: all 0.3s ease-in-out;
+        }
+        .sidebar-collapsed #leftSidebar { width: 5rem; }
+        .sidebar-collapsed .nav-text, .sidebar-collapsed .logo-text, .sidebar-collapsed .user-info { display: none; }
+        .sidebar-collapsed .logo-container, .sidebar-collapsed .nav-link, .sidebar-collapsed .user-profile { justify-content: center; }
+        .sidebar-collapsed #sidebarCollapseButton svg { transform: rotate(180deg); }
+
+        /* --- New Styles for Cards and Deals --- */
+        .product-card {
+            transition: all 0.2s ease-in-out;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .product-card.selected {
+            border-color: #9ca3af; /* gray-400 */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .deal-card {
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased h-screen">
+
+    <div class="relative flex h-full bg-white overflow-hidden">
+        <aside id="leftSidebar" class="w-[70%] md:w-[15%] absolute lg:relative z-30 lg:z-auto bg-gradient-to-br from-gray-800 to-gray-900 text-gray-300 p-4 flex flex-col justify-between h-full">
+            <div>
+                <div class="flex items-center justify-between mb-2 px-2">
+                    <div class="logo-container flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white flex-shrink-0"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                        <h1 class="logo-text text-lg font-bold text-white">Agentive</h1>
+                    </div>
+                    <button id="sidebarCollapseButton" class="p-1 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                </div>
+                <nav id="mainNav" class="flex flex-col gap-1.5 px-1 mt-4">
+                    <a href="#" data-page="marketplace" class="nav-link active flex items-center gap-3 px-3 py-2 rounded-md text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        <span class="nav-text">Marketplace</span>
+                    </a>
+                    <a href="#" data-page="deals" class="nav-link flex items-center gap-3 px-3 py-2 text-gray-400 rounded-md text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                        <span class="nav-text">Deals</span>
+                    </a>
+                    <a href="#" data-page="history" class="nav-link flex items-center gap-3 px-3 py-2 text-gray-400 rounded-md text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        <span class="nav-text">Chat History</span>
+                    </a>
+                </nav>
+            </div>
+            <div class="flex flex-col gap-4 border-t border-gray-700 pt-4">
+                <a href="#" class="user-profile flex items-center gap-2.5 p-1 rounded-md hover:bg-gray-700">
+                    <img src="https://placehold.co/32x32/e0e7ff/4338ca?text=A" alt="User Avatar" class="w-8 h-8 rounded-full flex-shrink-0">
+                    <div class="user-info">
+                        <p class="font-semibold text-xs text-white">Alex Doe</p>
+                        <p class="text-[10px] text-gray-400">alex.doe@example.com</p>
+                    </div>
+                </a>
+            </div>
+        </aside>
+
+        <div id="contentWrapper" class="flex-1 flex flex-col lg:flex-row transition-all duration-300">
+            <main id="mainContent" class="flex-1 flex flex-col p-6 h-full overflow-y-auto bg-gray-50 lg:w-[70%]">
+                <!-- Marketplace Page -->
+                <div id="marketplacePage" class="page-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800">Marketplace</h2>
+                        <button id="compareButton" class="hidden bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition">Compare Selected</button>
+                    </div>
+                    <div id="initialStateContainer" class="flex-1 flex flex-col items-center justify-center text-center p-8">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300 mb-4"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                        <h2 class="text-2xl font-bold text-gray-800">Welcome to Agentive</h2>
+                        <p class="mt-2 text-gray-500">Your AI-powered shopping assistant.</p>
+                    </div>
+                    <div id="productGrid" class="hidden w-full grid grid-cols-1 gap-6"></div>
+                </div>
+
+                <!-- Deals Page -->
+                <div id="dealsPage" class="page-content hidden">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6">Active Deals</h2>
+                    <div id="dealsContainer" class="space-y-4">
+                        <p class="text-gray-500">No active deals right now. Ask the agent for one!</p>
+                    </div>
+                </div>
+            </main>
+
+            <aside id="rightSidebar" class="w-full lg:w-[30%] bg-white p-4 flex flex-col h-full border-l border-gray-200">
+                <div id="chatHistory" class="flex-1 overflow-y-auto pr-2 space-y-4 flex flex-col">
+                    <div class="chat-bubble-agent p-3 rounded-lg max-w-xs text-sm">
+                        <p class="font-semibold text-gray-800 mb-1">Agent</p>
+                        <p class="message-text">Hello! What are you looking for today? I can help you find products and negotiate prices.</p>
+                    </div>
+                </div>
+                <div id="chatInputContainer" class="mt-4 pt-4 border-t border-gray-200">
+                    <div class="relative">
+                        <input type="text" id="userInput" placeholder="Find me a product..." class="bg-gray-100 w-full py-3 pl-5 pr-12 text-sm text-gray-800 placeholder-gray-500 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-transparent">
+                        <button id="sendButton" class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 hover:bg-indigo-700 transition text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        const FASTAPI_URL = 'http://127.0.0.1:8000/chat';
+        let conversationHistory = [];
+        let marketplaceActive = false;
+        let allProducts = [];
+        let selectedProducts = new Set();
+        let dealTimers = {};
+
+        async function handleUserQuery(message) {
+            const query = message || document.getElementById('userInput').value.trim();
+            if (query === '') return;
+
+            appendUserMessage(query);
+            if (!message) document.getElementById('userInput').value = '';
+            
+            const agentLoadingBubble = appendAgentMessage("", true);
+            
+            try {
+                const response = await fetch(FASTAPI_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_message: query, history: conversationHistory })
+                });
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                
+                agentLoadingBubble.querySelector('.message-text').textContent = result.text;
+                
+                conversationHistory.push({ role: 'user', content: query });
+                conversationHistory.push({ role: 'assistant', content: result.text });
+                
+                if (result.products && result.products.length > 0) {
+                    allProducts = result.products;
+                    renderProducts(allProducts);
+                }
+                if (result.special_deal) {
+                    renderDeal(result.special_deal);
+                    switchPage('deals');
+                }
+                
+            } catch (error) {
+                console.error("Error calling FastAPI:", error);
+                agentLoadingBubble.querySelector('.message-text').textContent = "Sorry, an error occurred.";
+            } finally {
+                agentLoadingBubble.querySelector('.loader-container')?.remove();
+                document.getElementById('chatHistory').scrollTop = document.getElementById('chatHistory').scrollHeight;
+            }
+        }
+        
+        function renderProducts(products) {
+            const productGrid = document.getElementById('productGrid');
+            productGrid.innerHTML = products.map(p => {
+                const modelName = p['Model Name'] || 'Unnamed Product';
+                const companyName = p['Company Name'] || 'N/A';
+                const capacity = p['Capacity'] || '?';
+                const priceValue = typeof p['Max Price'] === 'number' ? p['Max Price'] : 0;
+                const productId = p['ID'] || '';
+                const imageUrl = `http://127.0.0.1:8000/images/${encodeURIComponent(productId)}.jpg`;
+
+                return `
+                    <div class="product-card bg-white shadow-sm hover:shadow-md flex items-center p-4 rounded-lg" data-id="${productId}">
+                        <div class="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center mr-4">
+                            <img src="${imageUrl}" alt="${modelName}" class="max-w-full max-h-full object-contain" onerror="this.src='https://placehold.co/96x96/e0e7ff/4338ca?text=Img';">
+                        </div>
+                        <div class="flex-grow">
+                            <h3 class="font-semibold text-base text-gray-800">${modelName}</h3>
+                            <p class="text-sm text-gray-500">${companyName} - ${capacity}GB</p>
+                            <p class="text-lg font-bold text-gray-900 mt-2">₹${priceValue.toLocaleString('en-IN')}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            if (!marketplaceActive) activateMarketplaceView();
+        }
+
+        function renderDeal(deal) {
+            // Defensive check for valid deal object
+            if (!deal || !deal.products_involved || deal.products_involved.length === 0) {
+                console.error("Invalid deal object received:", deal);
+                return;
+            }
+
+            const dealsContainer = document.getElementById('dealsContainer');
+            const dealId = `deal-${Date.now()}`;
+            
+            if (dealsContainer.querySelector('p')) {
+                dealsContainer.innerHTML = '';
+            }
+
+            const dealCard = document.createElement('div');
+            dealCard.id = dealId;
+            dealCard.className = 'deal-card border border-gray-200 p-4 rounded-lg shadow-md';
+            
+            const product = deal.products_involved[0];
+            const originalPrice = product['Max Price'] || 0; // Fallback for safety
+            const dealPrice = deal.deal_price;
+
+            dealCard.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <h3 class="font-bold text-lg text-gray-800">${deal.heading}</h3>
+                    <div id="timer-${dealId}" class="text-sm font-medium bg-red-100 text-red-700 px-2 py-1 rounded-md">05:00</div>
+                </div>
+                <div class="mt-4 flex items-center">
+                    <div class="w-20 h-20 flex-shrink-0 bg-white rounded-md flex items-center justify-center mr-4 border">
+                        <img src="http://127.0.0.1:8000/images/${product.ID}.jpg" alt="${product['Model Name']}" class="max-w-full max-h-full object-contain">
+                    </div>
+                    <div>
+                        <p class="font-semibold">${product['Model Name']} (${product.Capacity}GB)</p>
+                        <p class="text-sm text-gray-600">
+                            <span class="line-through">₹${originalPrice.toLocaleString('en-IN')}</span>
+                            <span class="font-bold text-green-600 ml-2">₹${dealPrice.toLocaleString('en-IN')}</span>
+                        </p>
+                    </div>
+                </div>
+            `;
+            dealsContainer.prepend(dealCard);
+            startDealTimer(dealId, 300);
+        }
+
+        function startDealTimer(dealId, duration) {
+            if (dealTimers[dealId]) clearInterval(dealTimers[dealId]);
+
+            let timer = duration;
+            const timerElement = document.getElementById(`timer-${dealId}`);
+            
+            dealTimers[dealId] = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                let seconds = timer % 60;
+                seconds = seconds < 10 ? '0' + seconds : seconds;
+                timerElement.textContent = `${minutes}:${seconds}`;
+
+                if (--timer < 0) {
+                    clearInterval(dealTimers[dealId]);
+                    timerElement.textContent = "Expired";
+                    timerElement.classList.remove('bg-red-100', 'text-red-700');
+                    timerElement.classList.add('bg-gray-200', 'text-gray-600');
+                }
+            }, 1000);
+        }
+
+        function appendUserMessage(message) {
+            const chatHistory = document.getElementById('chatHistory');
+            const userBubble = document.createElement('div');
+            userBubble.className = 'chat-bubble-user p-3 rounded-lg max-w-xs text-sm';
+            userBubble.innerHTML = `<p>${message}</p>`;
+            chatHistory.appendChild(userBubble);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function appendAgentMessage(message, isLoading = false) {
+            const chatHistory = document.getElementById('chatHistory');
+            const agentBubble = document.createElement('div');
+            agentBubble.className = 'chat-bubble-agent p-3 rounded-lg max-w-xs text-sm';
+            let loadingHTML = isLoading ? `<div class="loader-container flex items-center justify-center py-2"><div class="loader"><span></span><span></span><span></span></div></div>` : '';
+            agentBubble.innerHTML = `<p class="font-semibold text-gray-800 mb-1">Agent</p><p class="message-text">${message}</p>${loadingHTML}`;
+            chatHistory.appendChild(agentBubble);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            return agentBubble;
+        }
+        
+        function activateMarketplaceView() {
+            marketplaceActive = true;
+            document.getElementById('initialStateContainer').style.display = 'none';
+            document.getElementById('productGrid').classList.remove('hidden');
+        }
+
+        function switchPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(page => page.classList.add('hidden'));
+            document.getElementById(`${pageId}Page`).classList.remove('hidden');
+
+            document.querySelectorAll('#mainNav .nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.dataset.page === pageId) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        function updateCompareButton() {
+            const compareButton = document.getElementById('compareButton');
+            if (selectedProducts.size > 1) {
+                compareButton.classList.remove('hidden');
+            } else {
+                compareButton.classList.add('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const sendButton = document.getElementById('sendButton');
+            const userInput = document.getElementById('userInput');
+            const chatHistory = document.getElementById('chatHistory');
+            const body = document.body;
+            const sidebarCollapseButton = document.getElementById('sidebarCollapseButton');
+            const mainNav = document.getElementById('mainNav');
+            const productGrid = document.getElementById('productGrid');
+            const compareButton = document.getElementById('compareButton');
+
+            sidebarCollapseButton.addEventListener('click', () => body.classList.toggle('sidebar-collapsed'));
+            mainNav.addEventListener('click', (e) => {
+                const link = e.target.closest('.nav-link');
+                if (link && link.dataset.page) {
+                    e.preventDefault();
+                    switchPage(link.dataset.page);
+                }
+            });
+
+            productGrid.addEventListener('click', (e) => {
+                const card = e.target.closest('.product-card');
+                if (!card) return;
+                
+                const productId = card.dataset.id;
+                card.classList.toggle('selected');
+                
+                if (selectedProducts.has(productId)) {
+                    selectedProducts.delete(productId);
+                } else {
+                    selectedProducts.add(productId);
+                }
+                updateCompareButton();
+            });
+
+            compareButton.addEventListener('click', () => {
+                const productsToCompare = allProducts.filter(p => selectedProducts.has(p.ID));
+                const productNames = productsToCompare.map(p => `${p['Model Name']} (${p.Capacity}GB)`).join(' vs ');
+                const comparisonMessage = `Can you compare these products for me: ${productNames}?`;
+                handleUserQuery(comparisonMessage);
+            });
+
+            const initialAgentMessage = chatHistory.querySelector('.message-text').textContent;
+            conversationHistory.push({ role: 'assistant', content: initialAgentMessage });
+            
+            sendButton.addEventListener('click', () => handleUserQuery());
+            userInput.addEventListener('keydown', (e) => { 
+                if (e.key === 'Enter') handleUserQuery();
+            });
+        });
+    </script>
+</body>
+</html>

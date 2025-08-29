@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Poppins', sans-serif; }
         .nav-link { transition: all 0.2s ease-in-out; font-weight: 400; }
         .nav-link:hover { background-color: #374151; color: #ffffff; }
         .nav-link.active { background-color: #4b5563; color: #ffffff; font-weight: 600; }
@@ -19,6 +19,14 @@
         #productGrid, #initialStateContainer { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         .chat-bubble-agent { background-color: #e5e7eb; align-self: flex-start; }
         .chat-bubble-user { background-color: #374151; color: #f9fafb; align-self: flex-end; }
+        
+        /* Updated chat bubble styles */
+        .chat-bubble-agent, .chat-bubble-user {
+            padding: 0.5rem 0.75rem; /* py-2 px-3 */
+            font-size: 0.8rem;      /* Smaller font */
+            line-height: 1.4;       /* Tighter line spacing */
+        }
+
         .loader { display: flex; align-items: center; justify-content: center; gap: 4px; }
         .loader span { width: 8px; height: 8px; border-radius: 50%; background-color: #9ca3af; animation: bounce 1.4s infinite ease-in-out both; }
         .loader span:nth-child(1) { animation-delay: -0.32s; }
@@ -33,7 +41,6 @@
         .sidebar-collapsed .logo-container, .sidebar-collapsed .nav-link, .sidebar-collapsed .user-profile { justify-content: center; }
         .sidebar-collapsed #sidebarCollapseButton svg { transform: rotate(180deg); }
 
-        /* --- New Styles for Cards and Deals --- */
         .product-card {
             transition: all 0.2s ease-in-out;
             border: 2px solid transparent;
@@ -46,41 +53,72 @@
         .deal-card {
             background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
         }
+        #userInput {
+            resize: none;
+            padding-right: 3rem; /* Make space for the button */
+        }
+        #userInput::-webkit-scrollbar { width: 4px; }
+        #userInput::-webkit-scrollbar-track { background: transparent; }
+        #userInput::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        #userInput::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* --- View Switcher Styles --- */
+        .view-btn { color: #6b7280; transition: all 0.2s ease-in-out; }
+        .view-btn.active {
+            background-color: white;
+            color: #1f2937;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        
+        /* --- Grid View Card Styles --- */
+        #productGrid.view-grid .product-card {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        #productGrid.view-grid .product-card .img-container {
+            width: 100%;
+            height: 10rem;
+            margin-right: 0;
+            margin-bottom: 1rem;
+        }
+        #productGrid.view-grid .product-card .flex-grow {
+            width: 100%;
+        }
     </style>
 </head>
-<body class="text-gray-800 antialiased h-screen">
+<body class="text-gray-800 antialiased h-screen bg-gradient-to-br from-gray-800 to-gray-900 p-2">
 
-    <div class="relative flex h-full bg-white overflow-hidden">
-        <aside id="leftSidebar" class="w-[70%] md:w-[15%] absolute lg:relative z-30 lg:z-auto bg-gradient-to-br from-gray-800 to-gray-900 text-gray-300 p-4 flex flex-col justify-between h-full">
+    <div class="relative flex h-full overflow-hidden rounded-2xl shadow-lg">
+        <aside id="leftSidebar" class="w-20 lg:w-[15%] max-w-xs flex-shrink-0 z-30 bg-gradient-to-br from-gray-800 to-gray-900 text-gray-300 p-4 flex flex-col justify-between h-full">
             <div>
-                <div class="flex items-center justify-between mb-2 px-2">
-                    <div class="logo-container flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white flex-shrink-0"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-                        <h1 class="logo-text text-lg font-bold text-white">Agentive</h1>
+                <div class="flex items-center justify-center lg:justify-between mb-2 px-2">
+                    <div class="logo-container flex items-center justify-center lg:justify-start gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white flex-shrink-0"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                        <h1 class="logo-text hidden lg:block text-lg font-bold text-white">Agentive</h1>
                     </div>
-                    <button id="sidebarCollapseButton" class="p-1 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                    <button id="sidebarCollapseButton" class="p-1 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white hidden lg:block">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                     </button>
                 </div>
-                <nav id="mainNav" class="flex flex-col gap-1.5 px-1 mt-4">
-                    <a href="#" data-page="marketplace" class="nav-link active flex items-center gap-3 px-3 py-2 rounded-md text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                        <span class="nav-text">Marketplace</span>
+                <nav id="mainNav" class="flex flex-col gap-4 px-1 mt-12">
+                    <a href="#" data-page="marketplace" class="nav-link active flex items-center justify-center lg:justify-start gap-3 px-3 py-2 rounded-md text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        <span class="nav-text hidden lg:inline">Marketplace</span>
                     </a>
-                    <a href="#" data-page="deals" class="nav-link flex items-center gap-3 px-3 py-2 text-gray-400 rounded-md text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-                        <span class="nav-text">Deals</span>
+                    <a href="#" data-page="deals" class="nav-link flex items-center justify-center lg:justify-start gap-3 px-3 py-2 text-gray-400 rounded-md text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                        <span class="nav-text hidden lg:inline">Deals</span>
                     </a>
-                    <a href="#" data-page="history" class="nav-link flex items-center gap-3 px-3 py-2 text-gray-400 rounded-md text-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                        <span class="nav-text">Chat History</span>
+                    <a href="#" data-page="history" class="nav-link flex items-center justify-center lg:justify-start gap-3 px-3 py-2 text-gray-400 rounded-md text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0"><path d="M21 15a2 2 S0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        <span class="nav-text hidden lg:inline">Chat History</span>
                     </a>
                 </nav>
             </div>
             <div class="flex flex-col gap-4 border-t border-gray-700 pt-4">
-                <a href="#" class="user-profile flex items-center gap-2.5 p-1 rounded-md hover:bg-gray-700">
+                <a href="#" class="user-profile flex items-center justify-center lg:justify-start gap-2.5 p-1 rounded-md hover:bg-gray-700">
                     <img src="https://placehold.co/32x32/e0e7ff/4338ca?text=A" alt="User Avatar" class="w-8 h-8 rounded-full flex-shrink-0">
-                    <div class="user-info">
+                    <div class="user-info hidden lg:block">
                         <p class="font-semibold text-xs text-white">Alex Doe</p>
                         <p class="text-[10px] text-gray-400">alex.doe@example.com</p>
                     </div>
@@ -88,43 +126,61 @@
             </div>
         </aside>
 
-        <div id="contentWrapper" class="flex-1 flex flex-col lg:flex-row transition-all duration-300">
-            <main id="mainContent" class="flex-1 flex flex-col p-6 h-full overflow-y-auto bg-gray-50 lg:w-[70%]">
-                <!-- Marketplace Page -->
-                <div id="marketplacePage" class="page-content">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-gray-800">Marketplace</h2>
-                        <button id="compareButton" class="hidden bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition">Compare Selected</button>
+        <div id="contentWrapper" class="flex-1 flex flex-col lg:flex-row">
+            <main id="mainContent" class="flex flex-col p-6 overflow-y-auto bg-gray-50 basis-3/5 lg:basis-auto lg:flex-1 rounded-tr-2xl lg:rounded-tr-none lg:rounded-tl-2xl lg:rounded-bl-2xl">
+                <div class="w-full max-w-7xl mx-auto flex-1 flex flex-col">
+                    <!-- Marketplace Page -->
+                    <div id="marketplacePage" class="page-content flex flex-col flex-1">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-semibold text-gray-800">Marketplace</h2>
+                            <div class="flex items-center gap-4">
+                                <!-- View Switcher -->
+                                <div id="viewSwitcher" class="flex items-center bg-gray-200 rounded-lg p-1">
+                                    <button data-view="list" class="view-btn active p-1.5 rounded-md">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                                    </button>
+                                    <button data-view="grid" class="view-btn p-1.5 rounded-md">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                                    </button>
+                                </div>
+                                 <button id="compareButton" class="hidden bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-600 transition">Compare Selected</button>
+                            </div>
+                        </div>
+                        <div id="initialStateContainer" class="flex-1 flex flex-col items-center justify-center text-center p-8">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300 mb-4"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                            <h2 class="text-2xl font-bold text-gray-800">Welcome to Agentive</h2>
+                            <p class="mt-2 text-gray-500">Your AI-powered shopping assistant.</p>
+                        </div>
+                        <div id="productGrid" class="hidden w-full grid grid-cols-1 gap-6"></div>
                     </div>
-                    <div id="initialStateContainer" class="flex-1 flex flex-col items-center justify-center text-center p-8">
-                         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-gray-300 mb-4"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
-                        <h2 class="text-2xl font-bold text-gray-800">Welcome to Agentive</h2>
-                        <p class="mt-2 text-gray-500">Your AI-powered shopping assistant.</p>
-                    </div>
-                    <div id="productGrid" class="hidden w-full grid grid-cols-1 gap-6"></div>
-                </div>
 
-                <!-- Deals Page -->
-                <div id="dealsPage" class="page-content hidden">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-6">Active Deals</h2>
-                    <div id="dealsContainer" class="space-y-4">
-                        <p class="text-gray-500">No active deals right now. Ask the agent for one!</p>
+                    <!-- Deals Page -->
+                    <div id="dealsPage" class="page-content hidden">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-6">Active Deals</h2>
+                        <div id="dealsContainer" class="space-y-4">
+                            <p class="text-gray-500">No active deals right now. Ask the agent for one!</p>
+                        </div>
                     </div>
                 </div>
             </main>
 
-            <aside id="rightSidebar" class="w-full lg:w-[30%] bg-white p-4 flex flex-col h-full border-l border-gray-200">
+            <!-- Dragger -->
+            <div id="dragger" class="w-2 cursor-col-resize group flex-shrink-0 hidden lg:flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors duration-200">
+                <div class="w-1 h-10 bg-gray-300 group-hover:bg-gray-600 rounded-full transition-colors duration-200"></div>
+            </div>
+            
+            <aside id="rightSidebar" class="w-full lg:w-auto lg:max-w-xl bg-white p-4 flex flex-col border-t lg:border-t-0 lg:border-l border-gray-200 basis-2/5 lg:basis-[30%] flex-shrink-0 rounded-br-2xl lg:rounded-none">
                 <div id="chatHistory" class="flex-1 overflow-y-auto pr-2 space-y-4 flex flex-col">
-                    <div class="chat-bubble-agent p-3 rounded-lg max-w-xs text-sm">
+                    <div class="chat-bubble-agent rounded-lg max-w-xs">
                         <p class="font-semibold text-gray-800 mb-1">Agent</p>
                         <p class="message-text">Hello! What are you looking for today? I can help you find products and negotiate prices.</p>
                     </div>
                 </div>
                 <div id="chatInputContainer" class="mt-4 pt-4 border-t border-gray-200">
                     <div class="relative">
-                        <input type="text" id="userInput" placeholder="Find me a product..." class="bg-gray-100 w-full py-3 pl-5 pr-12 text-sm text-gray-800 placeholder-gray-500 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-transparent">
-                        <button id="sendButton" class="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-indigo-600 hover:bg-indigo-700 transition text-white">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        <textarea id="userInput" placeholder="Find me a product..." rows="1" class="bg-gray-100 w-full py-3 pl-5 text-sm text-gray-800 placeholder-gray-500 rounded-xl focus:outline-none focus:ring-1 focus:ring-gray-500 border border-transparent overflow-y-hidden"></textarea>
+                        <button id="sendButton" class="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-gray-700 hover:bg-gray-600 transition text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                         </button>
                     </div>
                 </div>
@@ -139,13 +195,18 @@
         let allProducts = [];
         let selectedProducts = new Set();
         let dealTimers = {};
+        let currentView = 'list'; // To track the current view
 
         async function handleUserQuery(message) {
-            const query = message || document.getElementById('userInput').value.trim();
+            const userInput = document.getElementById('userInput');
+            const query = message || userInput.value.trim();
             if (query === '') return;
 
             appendUserMessage(query);
-            if (!message) document.getElementById('userInput').value = '';
+            if (!message) {
+                userInput.value = '';
+                userInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
             
             const agentLoadingBubble = appendAgentMessage("", true);
             
@@ -183,6 +244,7 @@
         
         function renderProducts(products) {
             const productGrid = document.getElementById('productGrid');
+            
             productGrid.innerHTML = products.map(p => {
                 const modelName = p['Model Name'] || 'Unnamed Product';
                 const companyName = p['Company Name'] || 'N/A';
@@ -193,7 +255,7 @@
 
                 return `
                     <div class="product-card bg-white shadow-sm hover:shadow-md flex items-center p-4 rounded-lg" data-id="${productId}">
-                        <div class="w-24 h-24 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center mr-4">
+                        <div class="img-container w-24 h-24 flex-shrink-0 bg-gray-100 rounded-md flex items-center justify-center mr-4">
                             <img src="${imageUrl}" alt="${modelName}" class="max-w-full max-h-full object-contain" onerror="this.src='https://placehold.co/96x96/e0e7ff/4338ca?text=Img';">
                         </div>
                         <div class="flex-grow">
@@ -204,11 +266,16 @@
                     </div>
                 `;
             }).join('');
+
             if (!marketplaceActive) activateMarketplaceView();
+
+            selectedProducts.forEach(productId => {
+                const card = productGrid.querySelector(`.product-card[data-id="${productId}"]`);
+                if (card) card.classList.add('selected');
+            });
         }
 
         function renderDeal(deal) {
-            // Defensive check for valid deal object
             if (!deal || !deal.products_involved || deal.products_involved.length === 0) {
                 console.error("Invalid deal object received:", deal);
                 return;
@@ -226,7 +293,7 @@
             dealCard.className = 'deal-card border border-gray-200 p-4 rounded-lg shadow-md';
             
             const product = deal.products_involved[0];
-            const originalPrice = product['Max Price'] || 0; // Fallback for safety
+            const originalPrice = product['Max Price'] || 0;
             const dealPrice = deal.deal_price;
 
             dealCard.innerHTML = `
@@ -261,13 +328,15 @@
                 const minutes = Math.floor(timer / 60);
                 let seconds = timer % 60;
                 seconds = seconds < 10 ? '0' + seconds : seconds;
-                timerElement.textContent = `${minutes}:${seconds}`;
+                if(timerElement) timerElement.textContent = `${minutes}:${seconds}`;
 
                 if (--timer < 0) {
                     clearInterval(dealTimers[dealId]);
-                    timerElement.textContent = "Expired";
-                    timerElement.classList.remove('bg-red-100', 'text-red-700');
-                    timerElement.classList.add('bg-gray-200', 'text-gray-600');
+                    if(timerElement) {
+                        timerElement.textContent = "Expired";
+                        timerElement.classList.remove('bg-red-100', 'text-red-700');
+                        timerElement.classList.add('bg-gray-200', 'text-gray-600');
+                    }
                 }
             }, 1000);
         }
@@ -275,7 +344,7 @@
         function appendUserMessage(message) {
             const chatHistory = document.getElementById('chatHistory');
             const userBubble = document.createElement('div');
-            userBubble.className = 'chat-bubble-user p-3 rounded-lg max-w-xs text-sm';
+            userBubble.className = 'chat-bubble-user rounded-lg max-w-xs';
             userBubble.innerHTML = `<p>${message}</p>`;
             chatHistory.appendChild(userBubble);
             chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -284,8 +353,8 @@
         function appendAgentMessage(message, isLoading = false) {
             const chatHistory = document.getElementById('chatHistory');
             const agentBubble = document.createElement('div');
-            agentBubble.className = 'chat-bubble-agent p-3 rounded-lg max-w-xs text-sm';
-            let loadingHTML = isLoading ? `<div class="loader-container flex items-center justify-center py-2"><div class="loader"><span></span><span></span><span></span></div></div>` : '';
+            agentBubble.className = 'chat-bubble-agent rounded-lg max-w-xs';
+            let loadingHTML = isLoading ? `<div class="loader-container flex items-center justify-center py-1"><div class="loader"><span></span><span></span><span></span></div></div>` : '';
             agentBubble.innerHTML = `<p class="font-semibold text-gray-800 mb-1">Agent</p><p class="message-text">${message}</p>${loadingHTML}`;
             chatHistory.appendChild(agentBubble);
             chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -296,6 +365,7 @@
             marketplaceActive = true;
             document.getElementById('initialStateContainer').style.display = 'none';
             document.getElementById('productGrid').classList.remove('hidden');
+            updateCompareButton(); 
         }
 
         function switchPage(pageId) {
@@ -319,6 +389,26 @@
             }
         }
 
+        function setView(view) {
+            if (!['list', 'grid'].includes(view)) return;
+            currentView = view;
+            const productGrid = document.getElementById('productGrid');
+            
+            document.querySelectorAll('#viewSwitcher .view-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === view);
+            });
+
+            if (view === 'grid') {
+                productGrid.classList.add('view-grid');
+                productGrid.classList.remove('grid-cols-1');
+                productGrid.classList.add('sm:grid-cols-2', 'xl:grid-cols-3');
+            } else { // list view
+                productGrid.classList.remove('view-grid');
+                productGrid.classList.remove('sm:grid-cols-2', 'xl:grid-cols-3');
+                productGrid.classList.add('grid-cols-1');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const sendButton = document.getElementById('sendButton');
             const userInput = document.getElementById('userInput');
@@ -328,6 +418,56 @@
             const mainNav = document.getElementById('mainNav');
             const productGrid = document.getElementById('productGrid');
             const compareButton = document.getElementById('compareButton');
+            const viewSwitcher = document.getElementById('viewSwitcher');
+
+            // --- Resizer Logic ---
+            const dragger = document.getElementById('dragger');
+            const rightSidebar = document.getElementById('rightSidebar');
+            const contentWrapper = document.getElementById('contentWrapper');
+            let isDragging = false;
+
+            dragger.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+
+            function onMouseMove(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                const contentWrapperRect = contentWrapper.getBoundingClientRect();
+                const newRightWidth = contentWrapperRect.right - e.clientX;
+                
+                const totalWidth = contentWrapper.offsetWidth;
+                const minWidth = 300;
+                const maxWidth = totalWidth * 0.6;
+
+                if (newRightWidth > minWidth && newRightWidth < maxWidth) {
+                    rightSidebar.style.flexBasis = `${newRightWidth}px`;
+                }
+            }
+
+            function onMouseUp() {
+                isDragging = false;
+                document.body.style.cursor = 'auto';
+                document.body.style.userSelect = 'auto';
+
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            }
+            // --- End Resizer Logic ---
+
+            // --- View Switcher Logic ---
+            viewSwitcher.addEventListener('click', (e) => {
+                const button = e.target.closest('.view-btn');
+                if (button && button.dataset.view) {
+                    setView(button.dataset.view);
+                }
+            });
+
 
             sidebarCollapseButton.addEventListener('click', () => body.classList.toggle('sidebar-collapsed'));
             mainNav.addEventListener('click', (e) => {
@@ -364,10 +504,29 @@
             conversationHistory.push({ role: 'assistant', content: initialAgentMessage });
             
             sendButton.addEventListener('click', () => handleUserQuery());
+            
+            userInput.addEventListener('input', () => {
+                const rightSidebar = document.getElementById('rightSidebar');
+                const maxHeight = rightSidebar.offsetHeight * 0.2;
+                userInput.style.height = 'auto';
+                
+                if (userInput.scrollHeight <= maxHeight) {
+                    userInput.style.height = `${userInput.scrollHeight}px`;
+                    userInput.style.overflowY = 'hidden';
+                } else {
+                    userInput.style.height = `${maxHeight}px`;
+                    userInput.style.overflowY = 'auto';
+                }
+            });
+
             userInput.addEventListener('keydown', (e) => { 
-                if (e.key === 'Enter') handleUserQuery();
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleUserQuery();
+                }
             });
         });
     </script>
 </body>
 </html>
+
